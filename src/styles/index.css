@@ -1,0 +1,198 @@
+@import "tailwindcss";
+
+/**
+ * Public brand tokens — cold-start fallbacks matching DEFAULT_WEB_PRIMARY.
+ * WebContentProvider overwrites these on :root from web_content.global.theme.
+ */
+@theme {
+  --color-brand: #2e7d32;
+  --color-brand-ink: #205022;
+  --color-brand-soft: #f1f6f2;
+  --color-brand-wash: #f5f9f6;
+  --color-brand-muted: #e0ebe0;
+  --color-brand-deep: #112913;
+  --color-brand-deep-mid: #1c431e;
+  --color-brand-deep-via: #246027;
+  --color-brand-on-deep: #bddbbf;
+  --color-brand-highlight: #53b658;
+  --color-brand-page-from: #faf8f5;
+  --color-brand-page-via: #fcfbf9;
+  --color-brand-page-to: #f3f6f3;
+}
+
+:root {
+  --web-primary: #2e7d32;
+  --web-primary-rgb: 46, 125, 50;
+  --web-ink: #205022;
+  --web-ink-rgb: 32, 80, 34;
+  --web-soft: #f1f6f2;
+  --web-soft-rgb: 241, 246, 242;
+  --web-wash: #f5f9f6;
+  --web-muted: #e0ebe0;
+  --web-accent: #53b658;
+  --web-deep: #112913;
+  --web-deep-mid: #1c431e;
+  --web-deep-via: #246027;
+  --web-on-deep: #bddbbf;
+  --web-highlight: #53b658;
+  --web-page-from: #faf8f5;
+  --web-page-via: #fcfbf9;
+  --web-page-to: #f3f6f3;
+  --web-brand-gradient: linear-gradient(to right, #246027, #39933d);
+  --web-deep-gradient: linear-gradient(to bottom right, #112913, #1c431e, #246027);
+  --web-nav-gradient: linear-gradient(
+    90deg,
+    rgba(241, 246, 242, 0.96) 0%,
+    rgba(241, 246, 242, 0.72) 18%,
+    rgba(241, 246, 242, 0.42) 50%,
+    rgba(241, 246, 242, 0.72) 82%,
+    rgba(241, 246, 242, 0.96) 100%
+  );
+}
+
+/* App shell: one scroll region under the fixed header (no document double-scrollbar). */
+html,
+body,
+#root {
+  height: 100%;
+  height: 100dvh;
+  max-width: 100vw;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  position: relative;
+}
+
+#app-scroll {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Horizontal scroll areas (e.g. phone showcase): hide scrollbar but keep swipe */
+.scrollbar-touch-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-touch-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* About Us — partner logo marquee + gentle float */
+@keyframes partner-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes partner-logo-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-partner-marquee {
+  animation: partner-marquee 42s linear infinite;
+}
+
+.animate-partner-logo-float {
+  animation: partner-logo-float 4.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-partner-marquee,
+  .animate-partner-logo-float {
+    animation: none !important;
+  }
+}
+
+/* Scroll-triggered reveals — fade, lift, slight de-blur */
+.scroll-reveal {
+  opacity: 0;
+  transform: translate3d(0, 2rem, 0) scale(0.985);
+  filter: blur(4px);
+  transition:
+    opacity var(--sr-duration, 720ms) cubic-bezier(0.22, 1, 0.36, 1),
+    transform var(--sr-duration, 720ms) cubic-bezier(0.22, 1, 0.36, 1),
+    filter var(--sr-duration, 720ms) cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--sr-delay, 0ms);
+}
+
+.scroll-reveal.scroll-reveal--from-down {
+  transform: translate3d(0, -2rem, 0) scale(0.985);
+}
+
+.scroll-reveal.scroll-reveal--from-left {
+  transform: translate3d(2rem, 0, 0) scale(0.985);
+}
+
+.scroll-reveal.scroll-reveal--from-right {
+  transform: translate3d(-2rem, 0, 0) scale(0.985);
+}
+
+.scroll-reveal.scroll-reveal--visible {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+  filter: blur(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+}
+
+/* Home — auto-play slideshow timer + slide motion */
+@keyframes showcase-timer-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.showcase-timer-fill {
+  animation: showcase-timer-fill var(--showcase-duration, 5s) linear forwards;
+  transform-origin: left center;
+}
+
+@keyframes showcase-float-orbit {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(2%, -2%) scale(1.03);
+  }
+  66% {
+    transform: translate(-2%, 1%) scale(0.98);
+  }
+}
+
+.showcase-orbit-bg {
+  animation: showcase-float-orbit 18s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .showcase-timer-fill {
+    animation: none !important;
+    transform: scaleX(1);
+  }
+
+  .showcase-orbit-bg {
+    animation: none !important;
+  }
+}
