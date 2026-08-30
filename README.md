@@ -52,18 +52,47 @@ This site is served at **https://www.apoyo-dasma.online** (and the apex domain).
 
 ---
 
-## 3. Whole-system technology stack
+## 3. Whole-system technology stack — how and why
 
-| Layer | Technology | Role |
-|-------|------------|------|
-| Public site | **React 19**, **Vite 7**, **React Router 7**, **Tailwind CSS 4**, **react-icons** | This repository |
-| Staff console | React 19 + Vite 7 + Tailwind 4 + lucide-react + SheetJS | Apoyo-Admin |
-| Citizen app | **Expo 54**, React Native 0.81, expo-router, SecureStore, Camera | Apoyo-Mobile |
-| API / DB | **Supabase local**: PostgreSQL 17, GoTrue, PostgREST, Storage, Deno Edge Functions, Kong | Apoyo-Admin `supabase/` |
-| Face / ID | CompreFace, DeepFace, MediaPipe, EasyOCR, FastAPI | Apoyo-Mobile `deploy/face-verification` |
-| Hosting | Docker Desktop, nginx, Cloudflare Tunnel, Resend SMTP, Hostinger registrar | Office Windows PC |
+### 3.1 Why this site is a React SPA (not WordPress, not Next.js)
 
-**Why a separate website?** Staff tools and citizen PII stay off the public marketing surface. The site can be cached, CMS-edited, and themed without giving visitors an auth session.
+The public site is **read-mostly marketing + a live program catalog**. **React 19** renders that in the browser. We did **not** use WordPress: the catalog must be the **same Postgres rows** the mobile app uses (`assistance_*`), not a second CMS database that would drift.
+
+We did **not** use **Next.js SSR**. SSR needs a Node server next to Kong. The office PC already runs Docker/Postgres/face models; adding Node just to HTML-render Home is extra failure surface. **Vite 7** builds **static files**. **nginx** serves them. Cloudflare caches at the edge.
+
+**React Router 7** gives `/services` and `/legal/terms-and-conditions` as real paths. nginx `try_files … /index.html` is required so a refresh does not 404.
+
+**Tailwind CSS 4** keeps layout consistent with Admin (same design language) without a shared component monorepo. **react-icons** is a small SVG set for marketing (hero, footer); Admin uses lucide because it needs denser action icons.
+
+**`persistSession: false`** on the Supabase client: this origin must **never** look like a logged-in app. A leftover JWT in `localStorage` on a shared barangay kiosk would be the wrong threat model. The anon key is still sent (required by Kong); it is **not** a user session.
+
+### 3.2 Why two backends-facing paths (Edge `web` vs PostgREST catalog)
+
+**Edge function `web` (Deno, in Apoyo-Admin)** is used for **Home/About/global JSON and legal**. Table `web_content` is **denied to `anon` in RLS**. If the browser selected it directly, a crafted client could read unpublished drafts or write pages. The function uses **service_role after** deciding: GET is public; POST `cms.save` requires a **superadmin JWT** and `is_superadmin()`. One function = one contract for Web + Admin CMS.
+
+**PostgREST + RLS** is used for **Services catalog**. Active categories/services/requirements are **meant** to be public. Encoding that in Postgres (`*_public_read_active`) means Web, Mobile, and any future client get the same rule **without** copying it into Deno. Writes still go through superadmin edge functions.
+
+**localStorage stale-while-revalidate** (`apoyo.webContent.v1`): the homepage should paint cached CMS copy instantly on a slow tunnel, then refresh. `Cache-Control` on the function (max-age 15, SWR 120) is the HTTP half of the same idea.
+
+**`sanitizeCmsHtml` / `safeHref`:** Superadmin can store HTML. The browser uses `dangerouslySetInnerHTML`. Sanitization is the control that stops a compromised CMS session from injecting `<script>` or `javascript:` links into every visitor.
+
+**OpenStreetMap iframe** (not Google Maps): no Google API key (would be another vendor). CSP `frame-src` is limited to OSM.
+
+### 3.3 Rest of Apoyo (this site’s neighbors)
+
+| Layer | Technology | Why it exists |
+|-------|------------|----------------|
+| Staff UI | React + Vite + nginx `:4174` | Interactive casework; same static-hosting argument as this site |
+| Citizens | Expo + SecureStore + camera | Native capture and encrypted session; cannot be this website |
+| API | Kong + Postgres + GoTrue + Storage + Edge | One `api.` hostname; RLS; MPIN hashed in GoTrue |
+| Face AI | CompreFace + DeepFace + MediaPipe on Docker | PII stays on the PC; phone never calls `:8090` |
+| Internet | Cloudflare Tunnel | No public IP / no inbound 443; TLS at Cloudflare |
+| Mail | Resend SMTP into GoTrue | Real confirmation mail; not used by this anonymous site |
+| Domain | Hostinger registrar, Cloudflare DNS | Registrar vs tunnel DNS split |
+
+### 3.4 Why nginx in Docker, not `vite preview`
+
+`vite preview` is a **developer process**. Production needs **gzip**, **immutable hashed assets**, **HSTS/CSP headers**, and a container that **restarts** with Docker. Bind `127.0.0.1:4173` so only **cloudflared** (not the LAN) is the public door. TLS is **not** on nginx; Cloudflare already terminates HTTPS. That avoids managing certificates on the office PC.
 
 ---
 
