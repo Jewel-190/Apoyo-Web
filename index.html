@@ -5,37 +5,14 @@
     <link rel="icon" type="image/png" href="/apoyo-favicon.png" />
     <link rel="apple-touch-icon" href="/apoyo-favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preconnect" href="https://api.apoyo-dasma.online" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap"
-      rel="stylesheet"
-    />
     <title>Apoyo</title>
     <!--
-      Theme boot: apply last-known public site color from localStorage before
-      first paint. Key must match WEB_THEME_STORAGE_KEY in webTheme.js.
+      Theme boot: apply the last-known public site color cached in
+      localStorage before the first paint so the user does not see a flash
+      of the default green before the CMS palette loads.
     -->
-    <script>
-      (function () {
-        try {
-          var raw = localStorage.getItem("apoyo.webTheme.v1");
-          if (!raw) return;
-          var parsed = JSON.parse(raw);
-          var vars = parsed && parsed.cssVars;
-          if (!vars || typeof vars !== "object") return;
-          var root = document.documentElement;
-          for (var key in vars) {
-            if (Object.prototype.hasOwnProperty.call(vars, key)) {
-              root.style.setProperty(key, String(vars[key]));
-            }
-          }
-        } catch (e) {
-          /* ignore corrupt cache */
-        }
-      })();
-    </script>
+    <script src="/theme-boot.js"></script>
   </head>
   <body>
     <div id="root"></div>

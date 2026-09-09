@@ -17,7 +17,9 @@ export function readCachedPublicWebContent() {
     }
     return {
       pages: { ...emptyPages(), ...parsed.pages },
-      legal: parsed.legal ?? null,
+      // Legal text is never stored in localStorage (ZAP Alert #6 remediation).
+      // It will be hydrated from the network fetch instead.
+      legal: null,
     };
   } catch {
     return null;
@@ -27,13 +29,15 @@ export function readCachedPublicWebContent() {
 export function writeCachedPublicWebContent(payload) {
   if (typeof window === "undefined") return;
   try {
+    // Only persist page data in localStorage.
+    // Legal terms contain email addresses and the word "password" which trigger
+    // ZAP's sensitive-info-in-localStorage heuristic (Alert #6).
     window.localStorage.setItem(
       WEB_CONTENT_CACHE_KEY,
       JSON.stringify({
         v: 1,
         t: Date.now(),
         pages: payload.pages ?? {},
-        legal: payload.legal ?? null,
       })
     );
   } catch {
